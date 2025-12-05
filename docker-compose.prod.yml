@@ -83,7 +83,7 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HTTP_ENABLED: "true"
-      KC_PROXY_HEADERS: "x-forwarded"
+      KC_PROXY_HEADERS: "xforwarded"
       KC_HOSTNAME: "keycloak.genigate.local"
       KC_HOSTNAME_STRICT: "false"
       KC_PROXY: "edge"
