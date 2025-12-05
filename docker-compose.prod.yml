@@ -1,0 +1,304 @@
+# Docker Compose - Environnement de production
+# Genigate Hospital System
+
+networks:
+  genigate-network:
+    driver: bridge
+
+volumes:
+  storage:
+  mysql-data:
+  rabbitmq-data:
+  letsencrypt:
+
+services:
+
+  # =======================
+  # Reverse Proxy - TRAEFIK
+  # =======================
+  traefik:
+    image: traefik:v2.11.32
+    container_name: genigate-traefik
+    command:
+      - "--api.dashboard=true"
+
+      # Providers
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+      # EntryPoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+
+      # Internal selfsigned certificates
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.domains[0].main=genigate.local"
+      - "--entrypoints.websecure.http.tls.domains[0].sans=*.genigate.local"
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - letsencrypt:/letsencrypt
+
+    networks:
+      - genigate-network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.genigate.local`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+
+  # ===========
+  # MySQL
+  # ===========
+  mysql:
+    image: mysql:8.0
+    container_name: genigate-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: keycloak
+      MYSQL_USER: keycloak
+      MYSQL_PASSWORD: ${MYSQL_KEYCLOAK_PASSWORD}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - genigate-network
+    restart: unless-stopped
+
+  # ============
+  # KEYCLOAK
+  # ============
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: genigate-keycloak
+    environment:
+      KC_DB: mysql
+      KC_DB_URL: jdbc:mysql://mysql:3306/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${MYSQL_KEYCLOAK_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN_USER}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: "x-forwarded"
+      KC_HOSTNAME: "keycloak.genigate.local"
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY: "edge"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+    command: start
+    depends_on:
+      - mysql
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`keycloak.genigate.local`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+
+  # ===============
+  # RabbitMQ
+  # ===============
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: genigate-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.genigate.local`)"
+      - "traefik.http.routers.rabbitmq.entrypoints=websecure"
+      - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
+
+  # ===============
+  # LICENSE API
+  # ===============
+  license-api:
+    image: ghcr.io/bellash13/genigate-license-api:${IMAGE_TAG:-latest}
+    container_name: genigate-license-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Data Source=/storage/license-api/license.db"
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.license-api.rule=Host(`license.genigate.local`)"
+      - "traefik.http.routers.license-api.entrypoints=websecure"
+      - "traefik.http.services.license-api.loadbalancer.server.port=80"
+
+  # =====================
+  # DOCTOR API
+  # =====================
+  doctor-api:
+    image: ghcr.io/bellash13/genigate-doctor-api:${IMAGE_TAG:-latest}
+    container_name: genigate-doctor-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Data Source=/storage/doctor-api/doctor.db"
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.doctor-api.rule=Host(`doctor.genigate.local`)"
+      - "traefik.http.routers.doctor-api.entrypoints=websecure"
+      - "traefik.http.services.doctor-api.loadbalancer.server.port=80"
+
+  # =====================
+  # NURSE API
+  # =====================
+  nurse-api:
+    image: ghcr.io/bellash13/genigate-nurse-api:latest
+    container_name: genigate-nurse-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nurse-api.rule=Host(`nurse.genigate.local`)"
+      - "traefik.http.routers.nurse-api.entrypoints=websecure"
+      - "traefik.http.services.nurse-api.loadbalancer.server.port=80"
+
+  # =====================
+  # LAB API
+  # =====================
+  lab-api:
+    image: ghcr.io/bellash13/genigate-lab-api:latest
+    container_name: genigate-lab-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lab-api.rule=Host(`lab.genigate.local`)"
+      - "traefik.http.routers.lab-api.entrypoints=websecure"
+      - "traefik.http.services.lab-api.loadbalancer.server.port=80"
+
+  # =====================
+  # PHARMACY API
+  # =====================
+  pharmacy-api:
+    image: ghcr.io/bellash13/genigate-pharmacy-api:latest
+    container_name: genigate-pharmacy-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pharmacy-api.rule=Host(`pharmacy.genigate.local`)"
+      - "traefik.http.routers.pharmacy-api.entrypoints=websecure"
+      - "traefik.http.services.pharmacy-api.loadbalancer.server.port=80"
+
+  # =====================
+  # RECEPTIONIST API
+  # =====================
+  receptionist-api:
+    image: ghcr.io/bellash13/genigate-receptionist-api:${IMAGE_TAG:-latest}
+    container_name: genigate-receptionist-api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Data Source=/storage/receptionist-api/receptionist.db"
+      RabbitMq__HostName: rabbitmq
+      RabbitMq__UserName: ${RABBITMQ_USER}
+      RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      Keycloak__Authority: https://keycloak.genigate.local/realms/genigate
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.receptionist-api.rule=Host(`receptionist.genigate.local`)"
+      - "traefik.http.routers.receptionist-api.entrypoints=websecure"
+      - "traefik.http.services.receptionist-api.loadbalancer.server.port=80"
+
+  # =====================
+  # FRONTEND (Angular)
+  # =====================
+  frontend:
+    image: ghcr.io/bellash13/genigate-frontend:${IMAGE_TAG:-latest}
+    container_name: genigate-frontend
+    depends_on:
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`genigate.local`)"
+      - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
