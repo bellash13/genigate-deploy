@@ -31,11 +31,6 @@ services:
       # EntryPoints
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
-
-      # Internal selfsigned certificates
-      - "--entrypoints.websecure.http.tls=true"
-      - "--entrypoints.websecure.http.tls.domains[0].main=genigate.local"
-      - "--entrypoints.websecure.http.tls.domains[0].sans=*.genigate.local"
       
 
     ports:
