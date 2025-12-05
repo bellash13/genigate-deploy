@@ -5,11 +5,5 @@ extendedKeyUsage = serverAuth
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = genigate.local
-DNS.2 = keycloak.genigate.local
-DNS.3 = license.genigate.local
-DNS.4 = doctor.genigate.local
-DNS.5 = nurse.genigate.local
-DNS.6 = lab.genigate.local
-DNS.7 = pharmacy.genigate.local
-DNS.8 = receptionist.genigate.local
+DNS.1 = *.genigate.local
+DNS.2 = genigate.local
