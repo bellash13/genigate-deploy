@@ -1,7 +1,7 @@
 tls:
   certificates:
-    - certFile: /certs/genigate.local.crt
-      keyFile:  /certs/genigate.local.key
+    - certFile: /certs/wildcard.genigate.local.crt
+      keyFile:  /certs/wildcard.genigate.local.key
   options:
     default:
       minVersion: VersionTLS12
