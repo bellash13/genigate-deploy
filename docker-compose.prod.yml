@@ -25,6 +25,8 @@ services:
       # Providers
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      - "--providers.file.directory=/certs"
+      - "--providers.file.watch=true"
 
       # EntryPoints
       - "--entrypoints.web.address=:80"
@@ -34,6 +36,7 @@ services:
       - "--entrypoints.websecure.http.tls=true"
       - "--entrypoints.websecure.http.tls.domains[0].main=genigate.local"
       - "--entrypoints.websecure.http.tls.domains[0].sans=*.genigate.local"
+      
 
     ports:
       - "80:80"
@@ -42,6 +45,7 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - letsencrypt:/letsencrypt
+      - "/opt/genigate/certs:/certs"
 
     networks:
       - genigate-network
