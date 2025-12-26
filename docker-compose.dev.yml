@@ -1,5 +1,5 @@
 # Docker Compose - Environnement de développement local
-# Genigate Hospital System
+# Genigate Hospital System - Version Nginx
 
 networks:
   genigate-network:
@@ -11,7 +11,30 @@ volumes:
   rabbitmq-data:
 
 services:
-  # MySQL pour Keycloak
+  # =======================
+  # Reverse Proxy - NGINX
+  # =======================
+  nginx:
+    image: nginx:alpine
+    container_name: genigate-nginx-dev
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - genigate-network
+    depends_on:
+      - keycloak
+      - license-api
+      - doctor-api
+      - nurse-api
+      - lab-api
+      - receptionist-api
+    restart: unless-stopped
+
+  # ===========
+  # MySQL
+  # ===========
   mysql:
     image: mysql:8.0
     container_name: genigate-mysql-dev

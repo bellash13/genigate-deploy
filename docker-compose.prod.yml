@@ -1,5 +1,5 @@
 # Docker Compose - Environnement de production
-# Genigate Hospital System
+# Genigate Hospital System - Version Nginx
 
 networks:
   genigate-network:
@@ -9,47 +9,33 @@ volumes:
   storage:
   mysql-data:
   rabbitmq-data:
-  letsencrypt:
 
 services:
 
   # =======================
-  # Reverse Proxy - TRAEFIK
+  # Reverse Proxy - NGINX
   # =======================
-  traefik:
-    image: traefik:v2.11.32
-    container_name: genigate-traefik
-    command:
-      - "--api.dashboard=true"
-
-      # Providers
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.file.directory=/certs"
-      - "--providers.file.watch=true"
-
-      # EntryPoints
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      
-
+  nginx:
+    image: nginx:alpine
+    container_name: genigate-nginx
     ports:
       - "80:80"
       - "443:443"
-
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "letsencrypt:/letsencrypt"
-      - "/opt/genigate/certs:/certs"
-
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
     networks:
       - genigate-network
-
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.genigate.local`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
+    depends_on:
+      - keycloak
+      - license-api
+      - doctor-api
+      - nurse-api
+      - lab-api
+      - pharmacy-api
+      - receptionist-api
+      - frontend
+    restart: unless-stopped
 
   # ===========
   # MySQL
@@ -93,11 +79,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host(`keycloak.genigate.local`)"
-      - "traefik.http.routers.keycloak.entrypoints=websecure"
-      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
 
   # ===============
   # RabbitMQ
@@ -113,11 +94,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.rabbitmq.rule=Host(`rabbitmq.genigate.local`)"
-      - "traefik.http.routers.rabbitmq.entrypoints=websecure"
-      - "traefik.http.services.rabbitmq.loadbalancer.server.port=15672"
 
   # ===============
   # LICENSE API
@@ -140,11 +116,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.license-api.rule=Host(`license.genigate.local`)"
-      - "traefik.http.routers.license-api.entrypoints=websecure"
-      - "traefik.http.services.license-api.loadbalancer.server.port=80"
 
   # =====================
   # DOCTOR API
@@ -168,11 +139,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.doctor-api.rule=Host(`doctor.genigate.local`)"
-      - "traefik.http.routers.doctor-api.entrypoints=websecure"
-      - "traefik.http.services.doctor-api.loadbalancer.server.port=80"
 
   # =====================
   # NURSE API
@@ -195,11 +161,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.nurse-api.rule=Host(`nurse.genigate.local`)"
-      - "traefik.http.routers.nurse-api.entrypoints=websecure"
-      - "traefik.http.services.nurse-api.loadbalancer.server.port=80"
 
   # =====================
   # LAB API
@@ -222,11 +183,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.lab-api.rule=Host(`lab.genigate.local`)"
-      - "traefik.http.routers.lab-api.entrypoints=websecure"
-      - "traefik.http.services.lab-api.loadbalancer.server.port=80"
 
   # =====================
   # PHARMACY API
@@ -249,11 +205,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pharmacy-api.rule=Host(`pharmacy.genigate.local`)"
-      - "traefik.http.routers.pharmacy-api.entrypoints=websecure"
-      - "traefik.http.services.pharmacy-api.loadbalancer.server.port=80"
 
   # =====================
   # RECEPTIONIST API
@@ -278,11 +229,6 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.receptionist-api.rule=Host(`receptionist.genigate.local`)"
-      - "traefik.http.routers.receptionist-api.entrypoints=websecure"
-      - "traefik.http.services.receptionist-api.loadbalancer.server.port=80"
 
   # =====================
   # FRONTEND (Angular)
@@ -296,8 +242,3 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`genigate.local`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
