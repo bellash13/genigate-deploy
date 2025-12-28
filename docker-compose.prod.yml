@@ -8,6 +8,7 @@ networks:
 volumes:
   storage:
   mysql-data:
+    external: true
   rabbitmq-data:
   keycloak-data:
 
