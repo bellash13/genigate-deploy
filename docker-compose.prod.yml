@@ -53,6 +53,11 @@ services:
     networks:
       - genigate-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   # ============
   # KEYCLOAK
@@ -75,7 +80,8 @@ services:
       KC_HOSTNAME_STRICT_HTTPS: "false"
     command: start
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
     networks:
       - genigate-network
     restart: unless-stopped
