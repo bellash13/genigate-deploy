@@ -1,7 +1,0 @@
-tls:
-  certificates:
-    - certFile: /certs/wildcard.genigate.local.crt
-      keyFile:  /certs/wildcard.genigate.local.key
-  options:
-    default:
-      minVersion: VersionTLS12
