@@ -78,13 +78,13 @@ services:
       KC_HOSTNAME: "keycloak.genigate.local"
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
-    command: ["start"]
+    command: ["start", "--optimized"]
     depends_on:
       mysql:
         condition: service_healthy
     networks:
       - genigate-network
-    restart: no
+    restart: unless-stopped
 
   # ===============
   # RabbitMQ
