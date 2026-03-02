@@ -1,5 +1,5 @@
 # Docker Compose - Environnement de développement local
-# Genigate Hospital System - Version Nginx
+# Genigate Hospital System
 
 networks:
   genigate-network:
@@ -11,30 +11,7 @@ volumes:
   rabbitmq-data:
 
 services:
-  # =======================
-  # Reverse Proxy - NGINX
-  # =======================
-  nginx:
-    image: nginx:alpine
-    container_name: genigate-nginx-dev
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
-    networks:
-      - genigate-network
-    depends_on:
-      - keycloak
-      - license-api
-      - doctor-api
-      - nurse-api
-      - lab-api
-      - receptionist-api
-    restart: unless-stopped
-
-  # ===========
-  # MySQL
-  # ===========
+  # MySQL pour Keycloak
   mysql:
     image: mysql:8.0
     container_name: genigate-mysql-dev
@@ -110,63 +87,62 @@ services:
       - "5001:80"
 
   # Doctor API
-  doctor-api:
-    build:
-      context: ../backend
-      dockerfile: genigate.DoctorApi/Dockerfile
-    container_name: genigate-doctor-api-dev
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:80
-      ConnectionStrings__DefaultConnection: "Data Source=/storage/doctor-api/doctor.db"
-      RabbitMq__HostName: rabbitmq
-    volumes:
-      - storage:/storage
-    depends_on:
-      - rabbitmq
-      - keycloak
-    networks:
-      - genigate-network
-    ports:
-      - "5002:80"
+  # doctor-api:
+  #   build:
+  #     context: ../backend
+  #     dockerfile: genigate.DoctorApi/Dockerfile
+  #   container_name: genigate-doctor-api-dev
+  #   environment:
+  #     ASPNETCORE_ENVIRONMENT: Development
+  #     ASPNETCORE_URLS: http://+:80
+  #     RabbitMq__HostName: rabbitmq
+  #   volumes:
+  #     - storage:/storage
+  #   depends_on:
+  #     - rabbitmq
+  #     - keycloak
+  #   networks:
+  #     - genigate-network
+  #   ports:
+  #     - "5002:80"
 
   # Nurse API
-  nurse-api:
-    build:
-      context: ../backend
-      dockerfile: genigate.NurseApi/Dockerfile
-    container_name: genigate-nurse-api-dev
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:80
-      RabbitMq__HostName: rabbitmq
-    volumes:
-      - storage:/storage
-    depends_on:
-      - rabbitmq
-    networks:
-      - genigate-network
-    ports:
-      - "5030:80"
+  # nurse-api:
+  #   build:
+  #     context: ../backend
+  #     dockerfile: genigate.NurseApi/Dockerfile
+  #   container_name: genigate-nurse-api-dev
+  #   environment:
+  #     ASPNETCORE_ENVIRONMENT: Development
+  #     ASPNETCORE_URLS: http://+:80
+  #     RabbitMq__HostName: rabbitmq
+  #   volumes:
+  #     - storage:/storage
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - genigate-network
+  #   ports:
+  #     - "5003:80"
 
   # Lab API
-  lab-api:
-    build:
-      context: ../backend
-      dockerfile: genigate.LabApi/Dockerfile
-    container_name: genigate-lab-api-dev
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:80
-      RabbitMq__HostName: rabbitmq
-    volumes:
-      - storage:/storage
-    depends_on:
-      - rabbitmq
-    networks:
-      - genigate-network
-    ports:
-      - "5027:80"
+  # lab-api:
+  #   build:
+  #     context: ../backend
+  #     dockerfile: genigate.LabApi/Dockerfile
+  #   container_name: genigate-lab-api-dev
+  #   environment:
+  #     ASPNETCORE_ENVIRONMENT: Development
+  #     ASPNETCORE_URLS: http://+:80
+  #     RabbitMq__HostName: rabbitmq
+  #   volumes:
+  #     - storage:/storage
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - genigate-network
+  #   ports:
+  #     - "5004:80"
 
   # Pharmacy API
   # pharmacy-api:
@@ -185,27 +161,23 @@ services:
   #   networks:
   #     - genigate-network
   #   ports:
-  #     - "5029:80"
+  #     - "5005:80"
 
   # Receptionist API
-  receptionist-api:
-    build:
-      context: ../backend
-      dockerfile: genigate.ReceptionistApi/Dockerfile
-    container_name: genigate-receptionist-api-dev
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ASPNETCORE_URLS: http://+:80
-      ConnectionStrings__DefaultConnection: "Data Source=/storage/receptionist-api/receptionist.db"
-      RabbitMq__HostName: rabbitmq
-      Keycloak__Authority: http://keycloak:8080/realms/genigate
-    volumes:
-      - storage:/storage
-    depends_on:
-      - rabbitmq
-      - keycloak
-    networks:
-      - genigate-network
-    ports:
-      - "5006:80"
-
+  # receptionist-api:
+  #   build:
+  #     context: ../backend
+  #     dockerfile: genigate.ReceptionistApi/Dockerfile
+  #   container_name: genigate-receptionist-api-dev
+  #   environment:
+  #     ASPNETCORE_ENVIRONMENT: Development
+  #     ASPNETCORE_URLS: http://+:80
+  #     RabbitMq__HostName: rabbitmq
+  #   volumes:
+  #     - storage:/storage
+  #   depends_on:
+  #     - rabbitmq
+  #   networks:
+  #     - genigate-network
+  #   ports:
+  #     - "5006:80"
