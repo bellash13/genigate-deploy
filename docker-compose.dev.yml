@@ -30,6 +30,7 @@ services:
       - nurse-api
       - lab-api
       - receptionist-api
+      - pharmacy-api
     restart: unless-stopped
 
   # ===========
@@ -169,23 +170,27 @@ services:
       - "5027:80"
 
   # Pharmacy API
-  # pharmacy-api:
-  #   build:
-  #     context: ../backend
-  #     dockerfile: genigate.PharmacyApi/Dockerfile
-  #   container_name: genigate-pharmacy-api-dev
-  #   environment:
-  #     ASPNETCORE_ENVIRONMENT: Development
-  #     ASPNETCORE_URLS: http://+:80
-  #     RabbitMq__HostName: rabbitmq
-  #   volumes:
-  #     - storage:/storage
-  #   depends_on:
-  #     - rabbitmq
-  #   networks:
-  #     - genigate-network
-  #   ports:
-  #     - "5029:80"
+  pharmacy-api:
+    build:
+      context: ../backend
+      dockerfile: genigate.PharmacyApi/Dockerfile
+    container_name: genigate-pharmacy-api-dev
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Data Source=/storage/pharmacy-api/pharmacy.db"
+      RabbitMq__HostName: rabbitmq
+      Keycloak__Authority: http://keycloak:8080/realms/genigate
+    volumes:
+      - storage:/storage
+    depends_on:
+      - rabbitmq
+      - keycloak
+      - license-api
+    networks:
+      - genigate-network
+    ports:
+      - "5265:80"
 
   # Receptionist API
   receptionist-api:

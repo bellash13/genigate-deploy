@@ -203,9 +203,11 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Data Source=/storage/pharmacy-api/pharmacy.db"
       RabbitMq__HostName: rabbitmq
       RabbitMq__UserName: ${RABBITMQ_USER}
       RabbitMq__Password: ${RABBITMQ_PASSWORD}
+      Keycloak__Authority: https://keycloak.genigate.local/realms/genigate
     volumes:
       - storage:/storage
     depends_on:
