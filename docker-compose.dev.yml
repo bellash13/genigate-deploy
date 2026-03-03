@@ -126,6 +126,7 @@ services:
       ASPNETCORE_URLS: http://+:80
       ConnectionStrings__DefaultConnection: "Data Source=/storage/doctor-api/doctor.db"
       RabbitMq__HostName: rabbitmq
+      Keycloak__Authority: http://keycloak:8080/realms/genigate
     volumes:
       - storage:/storage
     depends_on:
@@ -146,10 +147,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:80
       RabbitMq__HostName: rabbitmq
+      Keycloak__Authority: http://keycloak:8080/realms/genigate
     volumes:
       - storage:/storage
     depends_on:
       - rabbitmq
+      - keycloak
     networks:
       - genigate-network
     ports:
@@ -165,10 +168,12 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:80
       RabbitMq__HostName: rabbitmq
+      Keycloak__Authority: http://keycloak:8080/realms/genigate
     volumes:
       - storage:/storage
     depends_on:
       - rabbitmq
+      - keycloak
     networks:
       - genigate-network
     ports:
