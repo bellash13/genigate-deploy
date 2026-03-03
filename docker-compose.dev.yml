@@ -102,6 +102,7 @@ services:
       ConnectionStrings__DefaultConnection: "Data Source=/storage/license-api/license.db"
       RabbitMq__HostName: rabbitmq
       Keycloak__Authority: http://keycloak:8080/realms/genigate
+      Keycloak__AdminBaseUrl: http://host.docker.internal:8080
     volumes:
       - storage:/storage
     depends_on:
