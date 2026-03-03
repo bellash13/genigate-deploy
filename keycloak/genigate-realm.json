@@ -1,0 +1,138 @@
+{
+  "realm": "genigate",
+  "displayName": "Genigate Hospital",
+  "displayNameHtml": "<strong>Genigate</strong> Hospital",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 30,
+  "accessTokenLifespan": 3600,
+  "ssoSessionMaxLifespan": 86400,
+  "ssoSessionIdleTimeout": 1800,
+  "offlineSessionMaxLifespan": 5184000,
+  "offlineSessionIdleTimeout": 2592000,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanLogin": 1800,
+  "accessCodeLifespanUserAction": 300,
+  "internationalizationEnabled": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Rôle administrateur Genigate",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "doctor",
+        "description": "Rôle médecin Genigate",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "nurse",
+        "description": "Rôle infirmier Genigate",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "lab",
+        "description": "Rôle laboratoire Genigate",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "pharmacy",
+        "description": "Rôle pharmacie Genigate",
+        "composite": false,
+        "clientRole": false
+      },
+      {
+        "name": "receptionist",
+        "description": "Rôle réceptionniste Genigate",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "genigate-admin",
+      "email": "admin@genigate.local",
+      "firstName": "Admin",
+      "lastName": "Genigate",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Admin@Genigate!123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin",
+        "default-roles-genigate"
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "genigate-frontend",
+      "name": "Genigate Frontend",
+      "description": "Client public Angular — PKCE S256",
+      "rootUrl": "http://localhost:4200",
+      "adminUrl": "http://localhost:4200",
+      "baseUrl": "http://localhost:4200",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:4200/*",
+        "http://localhost:4200/callback",
+        "http://localhost:4200/silent-renew"
+      ],
+      "webOrigins": [
+        "http://localhost:4200"
+      ],
+      "notBefore": 0,
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:4200/*"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ],
+  "defaultRoles": [
+    "offline_access",
+    "uma_authorization"
+  ]
+}
